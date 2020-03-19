@@ -8,7 +8,7 @@ Vagrant.configure("2") do |config|
     end
   config.vm.provider :libvirt do |libvirt|
     libvirt.memory = 4096
-    libvirt.cpus   = 2
+    libvirt.cpus   = 4
   end
 
   config.vm.define "master" do |master|
@@ -24,9 +24,6 @@ Vagrant.configure("2") do |config|
     config.vm.define "worker#{i}" do |node|
       node.vm.hostname = "worker#{i}"
       node.vm.network :private_network, ip: "#{CLASS_C}.#{i+2}"
-      node.vm.provision "shell" do |s|
-         s.path = "provision_worker_script.sh"
-      end
     end
   end
 end
