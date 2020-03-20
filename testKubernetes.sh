@@ -1,22 +1,17 @@
 #!/usr/bin/env bats
-source /vagrant/params.sh
+@test "Test Suite for Kubernetes" {
+  # 0. Set timeout to 5 seconds
+  TIMEOUT=5
 
-@test "Test Suite for InfluxDB" {
-  # 1. Create file with records
-  /vagrant/create_data.sh > $IMPORT_PATH
-  # 2. Insert records
-  influx -import -path=$IMPORT_PATH
-  # 3. Test records count
-  N_ROWS=$(influx -database=$DATABASE -execute "select * from temperature"|tail -n +4|wc -l)
-  [ "$N_ROWS" -eq $N ]
-  # 4. Call API to insert 1 new record
-  curl -i -XPOST "http://localhost:8086/write?db=$DATABASE&precision=s" --data-binary 'temperature,mytag=1 myfield=90 1463683075'
-  let M=$N+1
-  N_ROWS=$(influx -database=$DATABASE -execute "select * from temperature"|tail -n +4|wc -l)
-  [ "$N_ROWS" -eq $M ]
-}
+  # 1. Retrieve port number
+  PORT=$(kubectl get service|grep nginx|awk '{print $5}'|awk -F':' '{print $2}'|awk -F'/' '{print $1}')
 
-@test "Check Grafana" {
-  TITLE=$(wget http://localhost:3000 -O - 2>/dev/null|grep title|sed -r "s/<title>//g"|sed -r "s/<\/title>//g"|awk '{print $1}')
-  [ "$TITLE" = "Grafana" ]
+  # 2. Get Actual Nodes
+  NODES=$(kubectl get pods|grep nginx|awk '{print $1}'|while read pod; do kubectl describe pod $pod|grep Node:|awk '{print $2}'|awk -F'/' '{print $1}'; done|sort -u)
+
+  # 3. Test with curl
+  for node in $NODES; do
+    RESULT=$(timeout $TIMEOUT curl $node:$PORT 2>/dev/null|grep -c "<h1>Welcome to nginx")
+    [ "$RESULT" -eq 1 ]
+  done
 }

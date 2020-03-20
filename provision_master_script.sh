@@ -29,14 +29,10 @@ kubectl create -f nginx-deployment.yaml
 # 6. Create a service
 kubectl create -f nginx-service.yaml
 
-exit
-kubectl get deployments
-kubectl describe deployment nginx-deployment
+# 7. Install Dashboard
+kubectl apply -f /vagrant/dashboard.yaml
+kubectl apply -f /vagrant/dashboard_service_account.yaml
+kubectl apply -f /vagrant/dashboard_cluster_role_binding.yaml
 
-kubectl get services
-
-# Test services
-kubectl get pods --all-namespaces
-
-# Test Nodes
-kubectl get nodes
+# 8. Launch Dashboard
+nohup kubectl proxy 2>&1 > logfile.txt &
